@@ -650,3 +650,5 @@ OFFER_ASSIGNMENT_EMAIL_DEFAULT_SUBJECT = 'New edX course assignment'
 SAILTHRU_KEY = None
 SAILTHRU_SECRET = None
 
+# Edly marketing site configuration
+EDLY_WORDPRESS_URL = 'http://localhost:8888/'
