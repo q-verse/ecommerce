@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from edly_ecommerce_app.api.v1 import views
+from ecommerce.extensions.edly_ecommerce_app.api.v1 import views
 
 
 app_name = 'v1'

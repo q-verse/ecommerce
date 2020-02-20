@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from edly_ecommerce_app.api.v1.constants import ERROR_MESSAGES
+from ecommerce.extensions.edly_ecommerce_app.api.v1.constants import ERROR_MESSAGES
 from ecommerce.theming.models import SiteTheme
 
 
@@ -18,8 +18,8 @@ class SiteThemesActions(APIView):
     """
     Site Theme Configurations Retrieve/Update.
     """
-    authentication_classes = (SessionAuthentication,)
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = (SessionAuthentication,)
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """

@@ -33,6 +33,7 @@ OSCAR_APPS = [
     'ecommerce.extensions.partner',
     'ecommerce.extensions.payment',
     'ecommerce.extensions.voucher',
+    'ecommerce.extensions.edly_ecommerce_app',
 ])
 # END APP CONFIGURATION
 
