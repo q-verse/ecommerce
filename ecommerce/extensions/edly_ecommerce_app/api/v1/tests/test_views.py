@@ -1,25 +1,15 @@
 """
 Unit tests for API v1 views.
 """
-from unittest import TestCase
+import json
 
 import pytest
-import json
-from django.conf import settings
 from django.test.client import Client
 from django.urls import reverse
 from rest_framework import status
 
-from edly_ecommerce_app.api.v1.constants import ERROR_MESSAGES
-
-from edly_panel_app.tests.factories import (
-    USER_PASSWORD,
-    EdlyUserActivityFactory,
-    GroupFactory,
-    UserFactory,
-    SiteThemeFactory
-)
-
+from ecommerce.extensions.edly_ecommerce_app.tests.factories import SiteThemeFactory
+from ecommerce.tests.testcases import TestCase
 
 pytestmark = pytest.mark.django_db
 
@@ -33,11 +23,12 @@ class SiteThemesActionsView(TestCase):
         """
         Prepare environment for tests.
         """
+        super(SiteThemesActionsView, self).setUp()
+        user = self.create_user()
         self.site_theme = SiteThemeFactory()
-        self.edlypanel_user = UserFactory()
         self.client = Client()
-        self.client.login(username=self.edlypanel_user.username, password=USER_PASSWORD)
-        self.site_themes_url = reverse('edly_panel_app:v1:site_themes')
+        self.client.login(username=user.username, password=self.password)
+        self.site_themes_url = reverse('edly_ecommerce_api:site_themes')
 
     def test_without_authentication(self):
         """
@@ -60,7 +51,7 @@ class SiteThemesActionsView(TestCase):
         Test that edly users can update site theme.
         """
         edly_theme_data = {
-            'theme_dir_name': "new-theme-name"
+            'theme_dir_name': "new-theme-ecommerce"
         }
         response = self.client.post(
             self.site_themes_url,

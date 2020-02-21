@@ -18,8 +18,8 @@ class SiteThemesActions(APIView):
     """
     Site Theme Configurations Retrieve/Update.
     """
-    # authentication_classes = (SessionAuthentication,)
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """
