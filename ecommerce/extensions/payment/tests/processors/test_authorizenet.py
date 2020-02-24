@@ -1,35 +1,36 @@
-import json
 import base64
-from mock import patch
-from django.urls import reverse
-from django.conf import settings
-from lxml import objectify, etree
-from authorizenet import apicontractsv1
+import json
 
-from ecommerce.tests.testcases import TestCase
+from authorizenet import apicontractsv1
+from django.conf import settings
+from django.urls import reverse
+from lxml import etree, objectify
+from mock import patch
+
 from ecommerce.core.url_utils import get_ecommerce_url
 from ecommerce.extensions.payment.exceptions import (
-    RefundError,
+    MissingProcessorResponseCardInfo,
     MissingTransactionDetailError,
     PaymentProcessorResponseNotFound,
-    MissingProcessorResponseCardInfo,
+    RefundError
 )
-from ecommerce.extensions.test.factories import create_order
+from ecommerce.extensions.payment.processors.authorizenet import AuthorizeNet
+from ecommerce.extensions.payment.tests.processors.mixins import PaymentProcessorTestCaseMixin
+from ecommerce.extensions.payment.utils import LxmlObjectJsonEncoder
 from ecommerce.extensions.test.authorizenet_utils import (
     get_authorizenet_refund_reponse_xml,
     get_authorizenet_transaction_reponse_xml,
-    record_transaction_detail_processor_response,
+    record_transaction_detail_processor_response
 )
 from ecommerce.extensions.test.constants import (
+    hosted_payment_token_response_template,
     refund_error_response,
     refund_success_response,
     transaction_detail_response_error_data,
-    hosted_payment_token_response_template,
-    transaction_detail_response_success_data,
+    transaction_detail_response_success_data
 )
-from ecommerce.extensions.payment.utils import LxmlObjectJsonEncoder
-from ecommerce.extensions.payment.processors.authorizenet import AuthorizeNet
-from ecommerce.extensions.payment.tests.processors.mixins import PaymentProcessorTestCaseMixin
+from ecommerce.extensions.test.factories import create_order
+from ecommerce.tests.testcases import TestCase
 
 
 class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
@@ -46,7 +47,7 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         """
             Verify the processor returns the appropriate parameters required to complete a transaction
         """
-        token_api_response = objectify.fromstring( hosted_payment_token_response_template)
+        token_api_response = objectify.fromstring(hosted_payment_token_response_template)
         mock_controller.return_value.getresponse.return_value = token_api_response
         actual_data = self.processor.get_transaction_parameters(self.basket, request=self.request)
         expected_data = {
@@ -82,7 +83,7 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         self.assertEqual(actual_settings.setting[0].settingName, payment_button_expected_setting_name)
         self.assertEqual(actual_settings.setting[0].settingValue, payment_button_expected_setting_value)
         self.assertEqual(actual_settings.setting[1].settingName, payment_return_expected_setting_name)
-        self.assertEqual(actual_settings.setting[1].settingValue,payment_return_expected_setting_value)
+        self.assertEqual(actual_settings.setting[1].settingValue, payment_return_expected_setting_value)
 
     def test_get_authorizenet_lineitems(self):
         """
@@ -136,7 +137,7 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         transaction_detail_response = objectify.fromstring(transaction_detail_xml)
         mock_controller.return_value.getresponse.return_value = transaction_detail_response
 
-        self.assertRaises (
+        self.assertRaises(
             MissingTransactionDetailError, self.processor.get_transaction_detail, self.transaction_id)
 
     def test_handle_processor_response(self):
@@ -156,8 +157,8 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         self.assertEqual(actual_handled_response.currency, self.basket.currency)
         self.assertEqual(actual_handled_response.total, float(expected_transaction.settleAmount))
         self.assertEqual(actual_handled_response.transaction_id, expected_transaction.transId)
-        self.assertEqual(actual_handled_response.card_type, expected_card_info.cardType )
-        self.assertEqual(actual_handled_response.card_number, expected_card_info.cardNumber )
+        self.assertEqual(actual_handled_response.card_type, expected_card_info.cardType)
+        self.assertEqual(actual_handled_response.card_number, expected_card_info.cardNumber)
 
         self.assert_processor_response_recorded(
             self.processor_name, expected_transaction.transId, expected_transaction_dict, basket=self.basket)
@@ -218,8 +219,9 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         mock_controller.return_value.getresponse.return_value = refund_response
 
         order = create_order(basket=self.basket)
-        self.assertRaises (
-            RefundError, self.processor.issue_credit, order.number, order.basket, reference_transaction_id, order.total_incl_tax, order.currency
+        self.assertRaises(
+            RefundError, self.processor.issue_credit, order.number, order.basket, reference_transaction_id,
+            order.total_incl_tax, order.currency
         )
 
     def test_issue_credit_for_missing_response_error(self):
@@ -229,6 +231,7 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         """
         reference_transaction_id = self.transaction_id
         order = create_order(basket=self.basket)
-        self.assertRaises (
-            PaymentProcessorResponseNotFound, self.processor.issue_credit, order.number, order.basket, reference_transaction_id, order.total_incl_tax, order.currency
+        self.assertRaises(
+            PaymentProcessorResponseNotFound, self.processor.issue_credit, order.number, order.basket,
+            reference_transaction_id, order.total_incl_tax, order.currency
         )
