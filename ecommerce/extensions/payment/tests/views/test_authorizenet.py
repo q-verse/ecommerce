@@ -1,28 +1,24 @@
-import json
 import base64
-from mock import patch
-from lxml import objectify
-from django.urls import reverse
-from oscar.test import factories
-from oscar.core.loading import get_class, get_model
+import json
 
-from ecommerce.tests.testcases import TestCase
+from django.urls import reverse
+from lxml import objectify
+from mock import patch
+from oscar.core.loading import get_class, get_model
+from oscar.test import factories
+
 from ecommerce.core.url_utils import get_lms_dashboard_url
 from ecommerce.courses.tests.factories import CourseFactory
-from ecommerce.extensions.test.factories import create_basket
-from ecommerce.extensions.test.authorizenet_utils import (
-    get_authorizenet_transaction_reponse_xml,
-)
-from ecommerce.extensions.test.constants import (
-    transaction_detail_response_success_data,
-)
-from ecommerce.extensions.order.constants import PaymentEventTypeName
 from ecommerce.extensions.api.v2.tests.views import JSON_CONTENT_TYPE
-from ecommerce.extensions.payment.tests.mixins import PaymentEventsMixin
-from ecommerce.extensions.payment.processors.authorizenet import AuthorizeNet
+from ecommerce.extensions.order.constants import PaymentEventTypeName
 from ecommerce.extensions.payment.exceptions import MissingTransactionDetailError
+from ecommerce.extensions.payment.processors.authorizenet import AuthorizeNet
+from ecommerce.extensions.payment.tests.mixins import PaymentEventsMixin
 from ecommerce.extensions.payment.views.authorizenet import AuthorizeNetNotificationView
-
+from ecommerce.extensions.test.authorizenet_utils import get_authorizenet_transaction_reponse_xml
+from ecommerce.extensions.test.constants import transaction_detail_response_success_data
+from ecommerce.extensions.test.factories import create_basket
+from ecommerce.tests.testcases import TestCase
 
 Country = get_model('address', 'Country')
 Order = get_model('order', 'Order')
@@ -49,10 +45,10 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             return notification view response
         """
         notification = {
-            'notificationId':'fake_id',
+            'notificationId': 'fake_id',
             'eventType': event_type,
             'eventDate': 'some_date',
-            'webhookId':'fake_webhook_id',
+            'webhookId': 'fake_webhook_id',
             'payload': {
                 'responseCode': responseCode,
                 'authCode': 'fake_code',
@@ -127,7 +123,8 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             'Recieved AuthorizeNet transaction notification without transaction_id')
 
     @patch('ecommerce.extensions.payment.views.authorizenet.logger', autospec=True)
-    @patch('ecommerce.extensions.payment.views.authorizenet.AuthorizeNetNotificationView.payment_processor', autospec=True)
+    @patch('ecommerce.extensions.payment.views.authorizenet.AuthorizeNetNotificationView.payment_processor',
+           autospec=True)
     def test_notification_without_transaction_details(self, mock_processor, mock_logger):
         """
             Test received notification with transaction_id for which we are unable to fetch transcation_details.
@@ -173,7 +170,8 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             },
             basket.site
         )
-        self.assertFalse( Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
+        self.assertFalse(
+            Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
 
     @patch('ecommerce.extensions.payment.views.authorizenet.send_notification', autospec=True)
     @patch('ecommerce.extensions.payment.processors.authorizenet.getTransactionDetailsController', autospec=True)
@@ -204,7 +202,8 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             },
             basket.site
         )
-        self.assertFalse( Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
+        self.assertFalse(
+            Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
 
     @patch('ecommerce.extensions.payment.views.authorizenet.logger', autospec=True)
     @patch('ecommerce.extensions.payment.views.authorizenet.OrderNumberGenerator.basket_id', autospec=True)
@@ -234,7 +233,8 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             'Received AuthorizeNet payment notification for non-existent basket [%s].',
             basket_id
         )
-        self.assertFalse( Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
+        self.assertFalse(
+            Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
 
     @patch('ecommerce.extensions.payment.processors.authorizenet.getTransactionDetailsController', autospec=True)
     def test_notification_success_transaction(self, mock_controller):
@@ -372,7 +372,8 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
 
         self.view._call_handle_order_placement(basket, self.client, transaction_detail_response)
         mock_logger_function.assert_called_once_with(basket.order_number, basket.id)
-        self.assertFalse(Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
+        self.assertFalse(
+            Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
 
 
 class AuthorizeNetRedirectionViewTests(TestCase):
@@ -384,7 +385,7 @@ class AuthorizeNetRedirectionViewTests(TestCase):
         """
         expected_course_id = "fake_course_id"
         course_id_hash = base64.b64encode(expected_course_id.encode())
-        url = '{}?course={}'.format(self.path, course_id_hash )
+        url = '{}?course={}'.format(self.path, course_id_hash)
         response = self.client.get(url)
 
         actual_course_id_hash = response.cookies.get('pendingTransactionCourse').value

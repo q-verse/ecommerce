@@ -2,29 +2,28 @@
 from __future__ import absolute_import, unicode_literals
 
 import base64
-import logging
 import json
+import logging
 from decimal import Decimal
-from django.urls import reverse
+
 from authorizenet import apicontractsv1
 from authorizenet.apicontrollers import (
+    createTransactionController,
     getHostedPaymentPageController,
-    getTransactionDetailsController,
-    createTransactionController
+    getTransactionDetailsController
 )
-from ecommerce.extensions.payment.exceptions import (
-    RefundError,
-    PaymentProcessorResponseNotFound,
-    MissingProcessorResponseCardInfo,
-    MissingTransactionDetailError
-)
-from oscar.core.loading import get_model
+from django.urls import reverse
 from oscar.apps.payment.exceptions import GatewayError
-from ecommerce.extensions.payment.processors import (
-    BaseClientSidePaymentProcessor,
-    HandledProcessorResponse
-)
+from oscar.core.loading import get_model
+
 from ecommerce.core.url_utils import get_ecommerce_url, get_lms_dashboard_url
+from ecommerce.extensions.payment.exceptions import (
+    MissingProcessorResponseCardInfo,
+    MissingTransactionDetailError,
+    PaymentProcessorResponseNotFound,
+    RefundError
+)
+from ecommerce.extensions.payment.processors import BaseClientSidePaymentProcessor, HandledProcessorResponse
 from ecommerce.extensions.payment.utils import LxmlObjectJsonEncoder
 
 logger = logging.getLogger(__name__)
@@ -241,7 +240,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
             Arguments:
                 transaction_response: Transaction details received from authorizeNet after successfull payment
                 basket (Basket): Basket being purchased via the payment processor.
-            
+
             Returns:
                 HandledProcessorResponse
         """
@@ -281,7 +280,8 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
             logger.exception(msg)
             raise PaymentProcessorResponseNotFound(msg)
 
-        transaction_card_info = reference_transaction_details.get('transaction', {}).get('payment', {}).get('creditCard', {})
+        transaction_card_info = reference_transaction_details.get('transaction', {}).get('payment', {}).get(
+            'creditCard', {})
 
         if not transaction_card_info:
             msg = 'AuthorizeNet issue credit error for order [{}]. Unable to get card-information from transaction details.'.format(
@@ -304,7 +304,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         transaction_request.transactionType = "refundTransaction"
         transaction_request.amount = amount
 
-        transaction_request.refTransId = reference_number # set refTransId to transId of a settled transaction
+        transaction_request.refTransId = reference_number   # set refTransId to transId of a settled transaction
         transaction_request.payment = payment
 
         create_transaction_request = apicontractsv1.createTransactionRequest()
@@ -333,13 +333,15 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
                         logger.error('Error message: %s' % response.transactionResponse.errors.error[0].errorText)
             else:
                 logger.error('AuthorizeNet issue credit request failed.')
-                if hasattr(response, 'transactionResponse') == True and hasattr(response.transactionResponse, 'errors') == True:
+                if hasattr(response, 'transactionResponse') == True and hasattr(response.transactionResponse,
+                                                                                'errors') == True:
                     logger.error('Error Code: %s' % str(response.transactionResponse.errors.error[0].errorCode))
                     logger.error('Error message: %s' % response.transactionResponse.errors.error[0].errorText)
                 else:
                     logger.error('Error Code: %s' % response.messages.message[0]['code'].text)
                     logger.error('Error message: %s' % response.messages.message[0]['text'].text)
 
-        msg = 'An error occurred while attempting to issue a credit (via Authorizenet) for order [{}].'.format(order_number)
+        msg = 'An error occurred while attempting to issue a credit (via Authorizenet) for order [{}].'.format(
+            order_number)
         logger.exception(msg)
-        raise  RefundError(msg)
+        raise RefundError(msg)

@@ -5,23 +5,24 @@ from __future__ import unicode_literals
 import base64
 import json
 import logging
+
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from oscar.apps.partner import strategy
-from rest_framework.views import APIView
 from django.utils.decorators import method_decorator
-from oscar.core.loading import get_class, get_model
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import ObjectDoesNotExist
-
+from oscar.apps.partner import strategy
 from oscar.apps.payment.exceptions import TransactionDeclined
+from oscar.core.loading import get_class, get_model
+from rest_framework.views import APIView
+
 from ecommerce.core.url_utils import get_lms_dashboard_url
-from ecommerce.notifications.notifications import send_notification
-from ecommerce.extensions.payment.exceptions import InvalidBasketError
 from ecommerce.extensions.checkout.mixins import EdxOrderPlacementMixin
+from ecommerce.extensions.payment.exceptions import InvalidBasketError
 from ecommerce.extensions.payment.processors.authorizenet import AuthorizeNet
+from ecommerce.notifications.notifications import send_notification
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ OrderTotalCalculator = get_class('checkout.calculators', 'OrderTotalCalculator')
 PaymentProcessorResponse = get_model('payment', 'PaymentProcessorResponse')
 
 NOTIFICATION_TYPE_AUTH_CAPTURE_CREATED = "net.authorize.payment.authcapture.created"
+
 
 class AuthorizeNetNotificationView(EdxOrderPlacementMixin, APIView):
     """
@@ -58,7 +60,7 @@ class AuthorizeNetNotificationView(EdxOrderPlacementMixin, APIView):
         """
             send email to the user after receiving a transcation notification with
             decilened/error status.
-            
+
             Arguments:
                 basket: transaction relevant basket.
                 transaction_status: Error or Declined.
@@ -77,7 +79,7 @@ class AuthorizeNetNotificationView(EdxOrderPlacementMixin, APIView):
     def _get_basket(self, basket_id):
         """
             Retrieve a basket using a basket Id.
-            
+
             Arguments:
                 payment_id: payment_id received from AuthorizeNet.
             Returns:
@@ -96,7 +98,7 @@ class AuthorizeNetNotificationView(EdxOrderPlacementMixin, APIView):
     def _get_billing_address(self, transaction_bill, order_number, basket):
         """
             Prepare and return a billing address object using transaction billing information.
-            
+
             Arguments:
                 transaction_bill: bill information from AuthorizeNet transaction response.
                 order_number: related order number
@@ -235,6 +237,7 @@ class AuthorizeNetNotificationView(EdxOrderPlacementMixin, APIView):
             )
         finally:
             return HttpResponse(status=200)
+
 
 def handle_redirection(request):
     """

@@ -55,7 +55,7 @@ class SiteThemesActionsView(TestCase):
         }
         response = self.client.post(
             self.site_themes_url,
-            SERVER_NAME = self.site_theme.site.domain,
+            SERVER_NAME=self.site_theme.site.domain,
             data=json.dumps(edly_theme_data),
             content_type='application/json'
         )
