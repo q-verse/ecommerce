@@ -1,5 +1,5 @@
 """
-Provides factories for edly_panel models.
+Provides factories for ecommerce models.
 """
 import factory
 from django.contrib.sites.models import Site

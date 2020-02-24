@@ -48,7 +48,7 @@ class SiteThemesActionsView(TestCase):
 
     def test_update_current_site_theme(self):
         """
-        Test that edly users can update site theme.
+        Test that ecommerce users can update site theme.
         """
         edly_theme_data = {
             'theme_dir_name': "new-theme-ecommerce"

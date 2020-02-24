@@ -1,3 +1,3 @@
 """
-Serializers for Edly Panel API.
+Serializers for Edly Ecommerce API.
 """
