@@ -97,4 +97,4 @@ class UserSessionInfoView(TestCase):
         response = self.client.get(self.session_url, format='json')
 
         assert response.status_code == status.HTTP_200_OK
-        assert "csrf_token" in response.json()
+        assert 'csrf_token' in response.json()
