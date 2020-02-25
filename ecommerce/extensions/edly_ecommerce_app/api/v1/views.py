@@ -3,6 +3,7 @@ Views for API v1.
 """
 
 from django.contrib.sites.shortcuts import get_current_site
+from django.middleware import csrf
 
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
@@ -54,3 +55,17 @@ class SiteThemesActions(APIView):
                 {'error': ERROR_MESSAGES.get('SITE_THEME_UPDATE_FAILURE')},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class UserSessionInfo(APIView):
+    """
+    Get User Session Info
+    """
+
+    authentication_classes = (SessionAuthentication,)
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        csrf_token = csrf.get_token(request)
+        data = {'csrf_token': csrf_token}
+        return Response(data)
