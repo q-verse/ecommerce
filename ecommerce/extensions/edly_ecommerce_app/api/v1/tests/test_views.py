@@ -64,3 +64,37 @@ class SiteThemesActionsView(TestCase):
         response = self.client.get(self.site_themes_url, SERVER_NAME=self.site_theme.site.domain, format='json')
         assert response.status_code == status.HTTP_200_OK
         assert response.json()[0]['theme_dir_name'] == edly_theme_data['theme_dir_name']
+
+
+class UserSessionInfoView(TestCase):
+    """
+    Unit test for user session.
+    """
+
+    def setUp(self):
+        """
+        Prepare environment for tests.
+        """
+        super(UserSessionInfoView, self).setUp()
+        user = self.create_user()
+        self.site_theme = SiteThemeFactory()
+        self.client = Client()
+        self.client.login(username=user.username, password=self.password)
+        self.session_url = reverse('edly_ecommerce_api:get_user_session_info')
+
+    def test_without_authentication(self):
+        """
+        Verify authentication is required when accessing the endpoint.
+        """
+        self.client.logout()
+        response = self.client.get(self.session_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_user_session_info(self):
+        """
+        Verify response on list view.
+        """
+        response = self.client.get(self.session_url, format='json')
+
+        assert response.status_code == status.HTTP_200_OK
+        assert 'csrf_token' in response.json()

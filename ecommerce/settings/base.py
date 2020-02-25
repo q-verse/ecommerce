@@ -269,6 +269,8 @@ VOUCHER_CACHE_TIMEOUT = 10  # Value is in seconds.
 
 SDN_CHECK_REQUEST_TIMEOUT = 5  # Value is in seconds.
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 # APP CONFIGURATION
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -290,6 +292,7 @@ DJANGO_APPS = [
     'social_django',
     'rest_framework_swagger',
     'django_sites_extensions',
+    'corsheaders',
 ]
 
 # Apps specific to this project go here.
