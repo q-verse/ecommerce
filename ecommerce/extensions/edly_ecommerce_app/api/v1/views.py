@@ -4,7 +4,6 @@ Views for API v1.
 
 from django.contrib.sites.shortcuts import get_current_site
 from django.middleware import csrf
-
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -63,7 +62,6 @@ class UserSessionInfo(APIView):
     """
 
     authentication_classes = (SessionAuthentication,)
-    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         csrf_token = csrf.get_token(request)
