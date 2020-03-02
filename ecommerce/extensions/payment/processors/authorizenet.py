@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 import base64
 import json
 import logging
-from decimal import Decimal
 
 from authorizenet import apicontractsv1
 from authorizenet.apicontrollers import (
@@ -16,7 +15,7 @@ from django.urls import reverse
 from oscar.apps.payment.exceptions import GatewayError
 from oscar.core.loading import get_model
 
-from ecommerce.core.url_utils import get_ecommerce_url, get_lms_dashboard_url
+from ecommerce.core.url_utils import get_ecommerce_url
 from ecommerce.extensions.payment.exceptions import (
     MissingProcessorResponseCardInfo,
     MissingTransactionDetailError,
@@ -56,11 +55,11 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
     def cancel_url(self):
         return get_ecommerce_url(self.configuration['cancel_checkout_path'])
 
-    def _get_authorizenet_payment_settings(self, basket):
+    def get_authorizenet_payment_settings(self, basket):
         """
             return AuthorizeNet_sdk Setting Instance containing required transaction settings to control the
-            receipt page urls and buttons. Visit https://developer.authorize.net/api/reference/features/accept_hosted.html
-            for more detail.
+            receipt page urls and buttons.
+            Visit https://developer.authorize.net/api/reference/features/accept_hosted.html for more detail.
         """
         course_id = basket.all_lines()[0].product.course_id
         course_id_hash = base64.b64encode(course_id.encode())
@@ -90,7 +89,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         settings.setting.append(payment_return_setting)
         return settings
 
-    def _get_authorizenet_lineitems(self, basket):
+    def get_authorizenet_lineitems(self, basket):
         """
             return AuthorizeNet_sdk lineItem List Instance containing all items data received from basket.
         """
@@ -132,15 +131,16 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
                 logger.info('Successfully got Authorizenet transaction details')
 
                 if transaction_details_response.messages is not None:
-                    logger.info('Message Code : %s' % transaction_details_response.messages.message[0]['code'].text)
-                    logger.info('Message Text : %s' % transaction_details_response.messages.message[0]['text'].text)
+                    logger.info('Message Code : %s', transaction_details_response.messages.message[0]['code'].text)
+                    logger.info('Message Text : %s', transaction_details_response.messages.message[0]['text'].text)
             else:
                 logger.error(
                     'Unable to get Authorizenet transaction detail using transaction_id [%s].', transaction_id)
                 if transaction_details_response.messages is not None:
-                    logger.error('Failed to get transaction details.\nCode:%s \nText:%s' % (
+                    logger.error(
+                        'Failed to get transaction details.\nCode:%s \nText:%s',
                         transaction_details_response.messages.message[0]['code'].text,
-                        transaction_details_response.messages.message[0]['text'].text)
+                        transaction_details_response.messages.message[0]['text'].text
                     )
                 raise MissingTransactionDetailError
         return transaction_details_response
@@ -172,7 +172,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         merchant_auth.name = self.merchant_auth_name
         merchant_auth.transactionKey = self.transaction_key
 
-        settings = self._get_authorizenet_payment_settings(basket)
+        settings = self.get_authorizenet_payment_settings(basket)
         order = apicontractsv1.orderType()
         order.invoiceNumber = basket.order_number
 
@@ -181,7 +181,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         transaction_request.amount = unicode(basket.total_incl_tax)
         transaction_request.order = order
 
-        line_items_list = self._get_authorizenet_lineitems(basket)
+        line_items_list = self.get_authorizenet_lineitems(basket)
         payment_page_request = apicontractsv1.getHostedPaymentPageRequest()
         payment_page_request.merchantAuthentication = merchant_auth
         payment_page_request.transactionRequest = transaction_request
@@ -192,7 +192,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         payment_page_controller.execute()
 
         payment_page_response = payment_page_controller.getresponse()
-        authorize_form_token = ""
+        authorize_form_token = None
 
         if payment_page_response is not None:
             if payment_page_response.messages.resultCode == apicontractsv1.messageTypeEnum.Ok:
@@ -203,18 +203,17 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
                     exc_info=True
                 )
                 if payment_page_response.messages is not None:
-                    logger.info('Message Code : %s' % payment_page_response.messages.message[0]['code'].text)
-                    logger.info('Message Text : %s' % payment_page_response.messages.message[0]['text'].text)
+                    logger.info('Message Code : %s', payment_page_response.messages.message[0]['code'].text)
+                    logger.info('Message Text : %s', payment_page_response.messages.message[0]['text'].text)
                 authorize_form_token = str(payment_page_response.token)
 
             else:
                 logger.error('Failed to get AuthorizeNet payment token.')
                 if payment_page_response.messages is not None:
                     logger.error(
-                        '\nCode:%s \nText:%s' % (
-                            payment_page_response.messages.message[0]['code'].text,
-                            payment_page_response.messages.message[0]['text'].text
-                        )
+                        '\nCode:%s \nText:%s',
+                        payment_page_response.messages.message[0]['code'].text,
+                        payment_page_response.messages.message[0]['text'].text
                     )
                 raise GatewayError(payment_page_response.messages.message[0]['text'].text)
         else:
@@ -262,8 +261,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
             card_type=card_info.cardType
         )
 
-    def issue_credit(
-            self, order_number, basket, reference_number, amount, currency):
+    def issue_credit(self, order_number, basket, reference_number, amount, currency):  # pylint: disable=too-many-statements
         """
             Refund a AuthorizeNet payment for settled transactions.For more Authorizenet Refund API information,
             visit https://developer.authorize.net/api/reference/#payment-transactions-refund-a-transaction
@@ -275,7 +273,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
             ).latest('created')
             reference_transaction_details = json.loads(paymnet_response.response)
         except:
-            msg = 'AuthorizeNet issue credit error for order [{}]. Unable to get payment reponse and transaction details.'.format(
+            msg = 'AuthorizeNet issue credit error for order [{}]. Unable to get payment transaction details.'.format(
                 order_number)
             logger.exception(msg)
             raise PaymentProcessorResponseNotFound(msg)
@@ -284,7 +282,7 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
             'creditCard', {})
 
         if not transaction_card_info:
-            msg = 'AuthorizeNet issue credit error for order [{}]. Unable to get card-information from transaction details.'.format(
+            msg = 'AuthorizeNet issue credit error for order [{}]. Unable to get card-information.'.format(
                 order_number)
             logger.exception(msg)
             raise MissingProcessorResponseCardInfo(msg)
@@ -317,9 +315,9 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
         response = create_transaction_controller.getresponse()
         if response is not None:
             if response.messages.resultCode == "Ok":
-                if hasattr(response.transactionResponse, 'messages') == True:
-                    logger.info('Message Code: %s' % response.transactionResponse.messages.message[0].code)
-                    logger.info('Description: %s' % response.transactionResponse.messages.message[0].description)
+                if hasattr(response.transactionResponse, 'messages'):
+                    logger.info('Message Code: %s', response.transactionResponse.messages.message[0].code)
+                    logger.info('Description: %s', response.transactionResponse.messages.message[0].description)
 
                     refund_transaction_id = response.transactionResponse.transId
                     refund_transaction_dict = LxmlObjectJsonEncoder().encode(response)
@@ -328,18 +326,17 @@ class AuthorizeNet(BaseClientSidePaymentProcessor):
                     return refund_transaction_id
                 else:
                     logger.error('AuthorizeNet issue credit request failed.')
-                    if hasattr(response.transactionResponse, 'errors') == True:
-                        logger.error('Error Code:  %s' % str(response.transactionResponse.errors.error[0].errorCode))
-                        logger.error('Error message: %s' % response.transactionResponse.errors.error[0].errorText)
+                    if hasattr(response.transactionResponse, 'errors'):
+                        logger.error('Error Code:  %s', str(response.transactionResponse.errors.error[0].errorCode))
+                        logger.error('Error message: %s', response.transactionResponse.errors.error[0].errorText)
             else:
                 logger.error('AuthorizeNet issue credit request failed.')
-                if hasattr(response, 'transactionResponse') == True and hasattr(response.transactionResponse,
-                                                                                'errors') == True:
-                    logger.error('Error Code: %s' % str(response.transactionResponse.errors.error[0].errorCode))
-                    logger.error('Error message: %s' % response.transactionResponse.errors.error[0].errorText)
+                if hasattr(response, 'transactionResponse') and hasattr(response.transactionResponse, 'errors'):
+                    logger.error('Error Code: %s', str(response.transactionResponse.errors.error[0].errorCode))
+                    logger.error('Error message: %s', response.transactionResponse.errors.error[0].errorText)
                 else:
-                    logger.error('Error Code: %s' % response.messages.message[0]['code'].text)
-                    logger.error('Error message: %s' % response.messages.message[0]['text'].text)
+                    logger.error('Error Code: %s', response.messages.message[0]['code'].text)
+                    logger.error('Error message: %s', response.messages.message[0]['text'].text)
 
         msg = 'An error occurred while attempting to issue a credit (via Authorizenet) for order [{}].'.format(
             order_number)

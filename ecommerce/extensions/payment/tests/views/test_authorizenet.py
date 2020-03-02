@@ -4,7 +4,7 @@ import json
 from django.urls import reverse
 from lxml import objectify
 from mock import patch
-from oscar.core.loading import get_class, get_model
+from oscar.core.loading import get_model
 from oscar.test import factories
 
 from ecommerce.core.url_utils import get_lms_dashboard_url
@@ -17,7 +17,6 @@ from ecommerce.extensions.payment.tests.mixins import PaymentEventsMixin
 from ecommerce.extensions.payment.views.authorizenet import AuthorizeNetNotificationView
 from ecommerce.extensions.test.authorizenet_utils import get_authorizenet_transaction_reponse_xml
 from ecommerce.extensions.test.constants import transaction_detail_response_success_data
-from ecommerce.extensions.test.factories import create_basket
 from ecommerce.tests.testcases import TestCase
 
 Country = get_model('address', 'Country')
@@ -267,7 +266,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
         basket = self.create_basket_with_product()
         course_title = basket.all_lines()[0].product.title
         transaction_status = 'fake_transcation_status'
-        self.view._send_transaction_declined_email(basket, transaction_status, course_title)
+        self.view.send_transaction_declined_email(basket, transaction_status, course_title)
         mock_email.assert_called_once_with(
             basket.owner,
             'TRANSACTION_REJECTED',
@@ -283,7 +282,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             Verify that basket has been retrieved properly.
         """
         expected_basket = self.create_basket_with_product()
-        actual_basket = self.view._get_basket(expected_basket.id)
+        actual_basket = self.view.get_basket(expected_basket.id)
         self.assertEqual(actual_basket, expected_basket)
 
     def test_get_basket_for_invalid_id(self):
@@ -291,7 +290,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             Verify that function returns None if there is no basket
         """
         expected_basket = None
-        actual_basket = self.view._get_basket("invalid_basket_id")
+        actual_basket = self.view.get_basket("invalid_basket_id")
         self.assertEqual(actual_basket, expected_basket)
 
     def test_get_billing_address(self):
@@ -308,7 +307,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
         transaction_bill = transaction_detail_response.transaction.billTo
         order_number = str(transaction_detail_response.transaction.order.invoiceNumber)
 
-        actual_billing_address = self.view._get_billing_address(transaction_bill, order_number, basket)
+        actual_billing_address = self.view.get_billing_address(transaction_bill, order_number, basket)
 
         self.assertEqual(actual_billing_address.first_name, transaction_bill.firstName)
         self.assertEqual(actual_billing_address.last_name, transaction_bill.lastName)
@@ -332,7 +331,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
         order_number = str(transaction_detail_response.transaction.order.invoiceNumber)
 
         Country.objects.filter(iso_3166_1_a2__iexact=transaction_bill.country).delete()
-        actual_billing_address = self.view._get_billing_address(transaction_bill, order_number, basket)
+        actual_billing_address = self.view.get_billing_address(transaction_bill, order_number, basket)
 
         self.assertEqual(actual_billing_address, None)
         expected_exception_msg = (
@@ -352,7 +351,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
             self.transaction_id, basket, response_data)
         transaction_detail_response = objectify.fromstring(transaction_detail_xml)
 
-        self.view._call_handle_order_placement(basket, self.client, transaction_detail_response)
+        self.view.call_handle_order_placement(basket, self.client, transaction_detail_response)
         Order.objects.get(number=basket.order_number, total_incl_tax=basket.total_incl_tax)
 
     @patch('ecommerce.extensions.payment.views.authorizenet.AuthorizeNetNotificationView.log_order_placement_exception')
@@ -370,7 +369,7 @@ class AuthorizeNetNotificationViewTests(PaymentEventsMixin, TestCase):
 
         mock_order_calculator.side_effect = Exception
 
-        self.view._call_handle_order_placement(basket, self.client, transaction_detail_response)
+        self.view.call_handle_order_placement(basket, self.client, transaction_detail_response)
         mock_logger_function.assert_called_once_with(basket.order_number, basket.id)
         self.assertFalse(
             Order.objects.filter(number=basket.order_number, total_incl_tax=basket.total_incl_tax).exists())
