@@ -2,14 +2,12 @@ import base64
 import json
 
 from authorizenet import apicontractsv1
-from django.conf import settings
 from django.urls import reverse
 from lxml import etree, objectify
 from mock import patch
 
 from ecommerce.core.url_utils import get_ecommerce_url
 from ecommerce.extensions.payment.exceptions import (
-    MissingProcessorResponseCardInfo,
     MissingTransactionDetailError,
     PaymentProcessorResponseNotFound,
     RefundError
@@ -42,19 +40,22 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         self.transaction_id = "1111111111111111"
         self.refund_transaction_id = "2222222222222222"
 
-    @patch('ecommerce.extensions.payment.processors.authorizenet.getHostedPaymentPageController', autospec=True)
-    def test_get_transaction_parameters(self, mock_controller):
+    def test_get_transaction_parameters(self):
         """
             Verify the processor returns the appropriate parameters required to complete a transaction
         """
-        token_api_response = objectify.fromstring(hosted_payment_token_response_template)
-        mock_controller.return_value.getresponse.return_value = token_api_response
-        actual_data = self.processor.get_transaction_parameters(self.basket, request=self.request)
-        expected_data = {
-            'payment_page_url': self.processor.autorizenet_redirect_url,
-            'token': "test_token"
-        }
-        self.assertDictEqual(actual_data, expected_data)
+        with patch(
+            'ecommerce.extensions.payment.processors.authorizenet.getHostedPaymentPageController',
+            autospec=True
+        ) as mock_controller:
+            token_api_response = objectify.fromstring(hosted_payment_token_response_template)
+            mock_controller.return_value.getresponse.return_value = token_api_response
+            actual_data = self.processor.get_transaction_parameters(self.basket, request=self.request)
+            expected_data = {
+                'payment_page_url': self.processor.autorizenet_redirect_url,
+                'token': "test_token"
+            }
+            self.assertDictEqual(actual_data, expected_data)
 
     def test_get_authorizenet_payment_settings(self):
         """
@@ -78,7 +79,7 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
             'cancelUrlText': 'Cancel'
         }
         payment_return_expected_setting_value = json.dumps(payment_return_configrations)
-        actual_settings = self.processor._get_authorizenet_payment_settings(self.basket)
+        actual_settings = self.processor.get_authorizenet_payment_settings(self.basket)
 
         self.assertEqual(actual_settings.setting[0].settingName, payment_button_expected_setting_name)
         self.assertEqual(actual_settings.setting[0].settingValue, payment_button_expected_setting_value)
@@ -91,9 +92,10 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
             containing all the information items from the basket.
         """
         expected_line_item = self.basket.all_lines()[0]
-        expected_line_item_unit_price = expected_line_item.line_price_incl_tax_incl_discounts / expected_line_item.quantity
+        expected_line_item_unit_price = (
+            expected_line_item.line_price_incl_tax_incl_discounts / expected_line_item.quantity)
 
-        actual_line_items_list = self.processor._get_authorizenet_lineitems(self.basket)
+        actual_line_items_list = self.processor.get_authorizenet_lineitems(self.basket)
         actual_line_item = actual_line_items_list.lineItem[0]
 
         self.assertEqual(actual_line_item.itemId, expected_line_item.product.course_id)
@@ -163,66 +165,70 @@ class AuthorizeNetTests(PaymentProcessorTestCaseMixin, TestCase):
         self.assert_processor_response_recorded(
             self.processor_name, expected_transaction.transId, expected_transaction_dict, basket=self.basket)
 
-    @patch('ecommerce.extensions.payment.processors.authorizenet.createTransactionController', autospec=True)
-    def test_issue_credit(self, mock_controller):
+    def test_issue_credit(self):
         """
             Tests issuing credit with AuthorizeNet processor
         """
-        reference_transaction_id = self.transaction_id
-        expected_transaction_id = self.refund_transaction_id
+        with patch(
+            'ecommerce.extensions.payment.processors.authorizenet.createTransactionController',
+            autospec=True
+        ) as mock_controller:
+            reference_transaction_id = self.transaction_id
+            expected_transaction_id = self.refund_transaction_id
 
-        record_transaction_detail_processor_response(self.processor, reference_transaction_id, self.basket)
+            record_transaction_detail_processor_response(self.processor, reference_transaction_id, self.basket)
 
-        data = {
-            "result_code": "Ok",
-            "message_code": "I00001",
-            "response_code": "1",
-            "transaction_id": expected_transaction_id,
-            "reference_transaction_id": reference_transaction_id,
-            "sub_template": refund_success_response,
-        }
+            data = {
+                "result_code": "Ok",
+                "message_code": "I00001",
+                "response_code": "1",
+                "transaction_id": expected_transaction_id,
+                "reference_transaction_id": reference_transaction_id,
+                "sub_template": refund_success_response,
+            }
 
-        refund_response_xml = get_authorizenet_refund_reponse_xml(data)
-        refund_response = objectify.fromstring(refund_response_xml)
-        mock_controller.return_value.getresponse.return_value = refund_response
+            refund_response_xml = get_authorizenet_refund_reponse_xml(data)
+            refund_response = objectify.fromstring(refund_response_xml)
+            mock_controller.return_value.getresponse.return_value = refund_response
 
-        expected_refund_transaction_dict = LxmlObjectJsonEncoder().encode(refund_response)
-        order = create_order(basket=self.basket)
-        actual_transaction_id = self.processor.issue_credit(
-            order.number, order.basket, reference_transaction_id, order.total_incl_tax, order.currency)
+            expected_refund_transaction_dict = LxmlObjectJsonEncoder().encode(refund_response)
+            order = create_order(basket=self.basket)
+            actual_transaction_id = self.processor.issue_credit(
+                order.number, order.basket, reference_transaction_id, order.total_incl_tax, order.currency)
 
-        self.assertEqual(int(expected_transaction_id), actual_transaction_id)
-        self.assert_processor_response_recorded(
-            self.processor_name, actual_transaction_id, expected_refund_transaction_dict, basket=self.basket)
+            self.assertEqual(int(expected_transaction_id), actual_transaction_id)
+            self.assert_processor_response_recorded(
+                self.processor_name, actual_transaction_id, expected_refund_transaction_dict, basket=self.basket)
 
-    @patch('ecommerce.extensions.payment.processors.authorizenet.createTransactionController', autospec=True)
-    def test_issue_credit_error(self, mock_controller):
+    def test_issue_credit_error(self):
         """
             Verify the processor raises RefundError on receiving error response from AuthorizeNet (Refund) API.
         """
-        reference_transaction_id = self.transaction_id
-        expected_transaction_id = self.refund_transaction_id
+        with patch(
+            'ecommerce.extensions.payment.processors.authorizenet.createTransactionController',
+            autospec=True
+        ) as mock_controller:
+            reference_transaction_id = self.transaction_id
+            record_transaction_detail_processor_response(self.processor, reference_transaction_id, self.basket)
 
-        record_transaction_detail_processor_response(self.processor, reference_transaction_id, self.basket)
+            data = {
+                "result_code": "Error",
+                "message_code": "E00001",
+                "response_code": "3",
+                "transaction_id": "0",
+                "reference_transaction_id": reference_transaction_id,
+                "sub_template": refund_error_response,
+            }
 
-        data = {
-            "result_code": "Error",
-            "message_code": "E00001",
-            "response_code": "3",
-            "transaction_id": "0",
-            "reference_transaction_id": reference_transaction_id,
-            "sub_template": refund_error_response,
-        }
+            refund_response_xml = get_authorizenet_refund_reponse_xml(data)
+            refund_response = objectify.fromstring(refund_response_xml)
+            mock_controller.return_value.getresponse.return_value = refund_response
 
-        refund_response_xml = get_authorizenet_refund_reponse_xml(data)
-        refund_response = objectify.fromstring(refund_response_xml)
-        mock_controller.return_value.getresponse.return_value = refund_response
-
-        order = create_order(basket=self.basket)
-        self.assertRaises(
-            RefundError, self.processor.issue_credit, order.number, order.basket, reference_transaction_id,
-            order.total_incl_tax, order.currency
-        )
+            order = create_order(basket=self.basket)
+            self.assertRaises(
+                RefundError, self.processor.issue_credit, order.number, order.basket, reference_transaction_id,
+                order.total_incl_tax, order.currency
+            )
 
     def test_issue_credit_for_missing_response_error(self):
         """
