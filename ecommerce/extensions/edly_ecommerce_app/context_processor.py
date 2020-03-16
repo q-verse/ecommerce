@@ -24,7 +24,7 @@ def dynamic_theming_context(request):  # pylint: disable=unused-argument
     """
     Context processor responsible for dynamic theming.
     """
-    configuration_helpers = request.site.siteconfiguration.edly_client_branding_settings
+    configuration_helpers = request.site.siteconfiguration.edly_client_theme_branding_settings
     theming_context = cache.get(CACHE_NAME)
     if not theming_context:
         theming_context = {}

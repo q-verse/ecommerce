@@ -195,9 +195,9 @@ class SiteConfiguration(models.Model):
         default=False
     )
 
-    edly_client_branding_settings = JSONField(
-        verbose_name=_('Edly theme branding settings'),
-        help_text=_('JSON string containing edly theme branding settings.'),
+    edly_client_theme_branding_settings = JSONField(
+        verbose_name=_('Edly client theme branding settings'),
+        help_text=_('JSON string containing edly client theme branding settings.'),
         null=False,
         blank=False,
         default={}
