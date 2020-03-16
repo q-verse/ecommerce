@@ -195,6 +195,14 @@ class SiteConfiguration(models.Model):
         default=False
     )
 
+    edly_client_branding_settings = JSONField(
+        verbose_name=_('Edly theme branding settings'),
+        help_text=_('JSON string containing edly theme branding settings.'),
+        null=False,
+        blank=False,
+        default={}
+    )
+
     @property
     def payment_processors_set(self):
         """
