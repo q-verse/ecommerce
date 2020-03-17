@@ -25,6 +25,10 @@ def dynamic_theming_context(request):  # pylint: disable=unused-argument
     Context processor responsible for dynamic theming.
     """
     configuration_helpers = request.site.siteconfiguration.edly_client_theme_branding_settings
+    fonts_configuration = configuration_helpers.get('FONTS', DEFAULT_FONTS_DICT)
+    fonts_configuration.update({
+        'font_path': fonts_configuration.pop('font-path', DEFAULT_FONTS_DICT.get('font-path'))
+    })
     theming_context = cache.get(CACHE_NAME)
     if not theming_context:
         theming_context = {}
@@ -32,7 +36,7 @@ def dynamic_theming_context(request):  # pylint: disable=unused-argument
             {'edly_colors_config': get_theme_colors(configuration_helpers)}
         )
         theming_context.update(
-            {'edly_fonts_config': configuration_helpers.get('FONTS', DEFAULT_FONTS_DICT)}
+            {'edly_fonts_config': fonts_configuration}
         )
         theming_context.update(
             {'edly_branding_config': configuration_helpers.get('BRANDING', DEFAULT_BRANDING_DICT)}
