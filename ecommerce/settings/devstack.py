@@ -73,6 +73,12 @@ PAYMENT_PROCESSOR_CONFIG = {
             'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
             'merchant_auth_name': config_from_yaml.get('AUTHORIZENET_MERCHANT_AUTH_NAME'),
             'transaction_key': config_from_yaml.get('AUTHORIZENET_TRANSACTION_KEY'),
+        },
+        'paystack': {
+            'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
+            'public_key': config_from_yaml.get('PAYSTACK_PUBLIC_KEY'),
+            'secret_key': config_from_yaml.get('PAYSTACK_SECRET_KEY'),
+            'base_url': config_from_yaml.get('PAYSTACK_BASE_URL')
         }
     },
 }

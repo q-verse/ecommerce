@@ -84,7 +84,20 @@ authorizenet_dict = {
     'transaction_key': config_from_yaml.get('AUTHORIZENET_TRANSACTION_KEY'),
     'redirect_url': config_from_yaml.get('AUTHORIZENET_REDIRECT_URL')
 }
-PAYMENT_PROCESSOR_CONFIG['edx'].update({'authorizenet': authorizenet_dict})
+
+paystack_dict = {
+    'public_key': config_from_yaml.get('PAYSTACK_PUBLIC_KEY'),
+    'secret_key': config_from_yaml.get('PAYSTACK_SECRET_KEY'),
+    'base_url': config_from_yaml.get('PAYSTACK_BASE_URL')
+}
+
+PAYMENT_PROCESSOR_CONFIG['edx'].update(
+    {
+        'authorizenet': authorizenet_dict,
+        'paystack': paystack_dict
+    }
+)
+
 
 for __, configs in PAYMENT_PROCESSOR_CONFIG.iteritems():
     for __, config in configs.iteritems():

@@ -163,6 +163,16 @@
                               title="{% trans "Pay with Authorize Net" %}"
                               type="button">
                       </button>
+                      <button data-track-type="click"
+                              data-track-event="edx.bi.ecommerce.basket.payment_selected"
+                              data-track-category="checkout"
+                              data-track-payment-method="paystack"
+                              data-processor-name="paystack"
+                              class="btn payment-button payment-processor-paystack"
+                              value="paystack"
+                              title="{% trans "Pay with Paystack" %}"
+                              type="button">
+                      </button>
                       <button id="applePayBtn" lang="{{ LANGUAGE_CODE|default:"en-us" }}" style="display:none"
                               data-track-type="click"
                               data-track-event="edx.bi.ecommerce.basket.payment_selected"
