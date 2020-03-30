@@ -111,6 +111,13 @@ PAYMENT_PROCESSOR_CONFIG = {
             'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
             'merchant_auth_name': "fake_merchant_auth_name",
             'transaction_key': "edx_fake_key",
+        },
+        'paystack': {
+            'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
+            'public_key': 'fake_public_key',
+            'secret_key': 'fake_secret_key',
+            'base_url': 'http://paystack_base_url',
+            'error_path': PAYMENT_PROCESSOR_ERROR_PATH,
         }
     },
     'other': {
@@ -146,6 +153,13 @@ PAYMENT_PROCESSOR_CONFIG = {
             'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
             'merchant_auth_name': "fake_merchant_auth_name",
             'transaction_key': "edx_fake_key",
+        },
+        'paystack': {
+            'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
+            'public_key': 'fake_public_key',
+            'secret_key': 'fake_secret_key',
+            'base_url': 'http://paystack_base_url',
+            'error_path': PAYMENT_PROCESSOR_ERROR_PATH,
         }
     }
 }

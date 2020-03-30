@@ -1,3 +1,4 @@
+""" Client to handle Paystack requests. """
 import json
 import logging
 
@@ -7,7 +8,7 @@ from ecommerce.qverse_features.paystack import constants as paystack_const
 from ecommerce.qverse_features.paystack.exceptions import (
     InvalidClientArgument,
     InvalidPaystackClientMethod,
-    InvalidRequestMethod,
+    InvalidRequestMethod
 )
 
 logger = logging.getLogger(__name__)
@@ -33,12 +34,14 @@ class PaystackClient(object):
             self._AUTHORIZATION_KEY = authorization_key
         else:
             if not authorization_key and not base_url:
-                msg = "Authorization key and Base Url"
+                msg = 'Authorization key and Base Url'
             else:
-                msg = "Authorization key" if not authorization_key else "Base Url"
-            raise InvalidClientArgument("Missing {} argument.".format(msg))
+                msg = 'Authorization key' if not authorization_key else 'Base Url'
+            msg = "Missing {} argument.".format(msg)
+            logger.error(msg)
+            raise InvalidClientArgument(msg)
 
-    def _url(self, path):
+    def get_url(self, path):
         """
         Creates a request URL by appending path with base end point.
         """
@@ -47,16 +50,16 @@ class PaystackClient(object):
             url += path
         return url
 
-    def _headers(self):
+    def get_headers(self):
         """
         Returns Request Header required to send Paystack API.
         """
         return {
-            "Content-Type": self._CONTENT_TYPE,
-            "Authorization": "Bearer " + self._AUTHORIZATION_KEY
+            'Content-Type': self._CONTENT_TYPE,
+            'Authorization': 'Bearer ' + self._AUTHORIZATION_KEY
         }
 
-    def _parse_response(self, response):
+    def parse_response(self, response):
         """
         Parses and return the response.
         """
@@ -69,7 +72,7 @@ class PaystackClient(object):
             data = None
 
         if response.status_code in [200, 201]:
-            logger.info("Paystack API returned success response: %s.", data)
+            logger.info("Paystack API returned success response: %s.", json.dumps(data))
             return True, data
 
         else:
@@ -77,7 +80,7 @@ class PaystackClient(object):
             logger.error("Paystack API return Error response: %s.", json.dumps(data))
             return False, data
 
-    def _handle_request(self, request_data):
+    def handle_request(self, request_data):
         """
         Handles all Paystack API calls.
         """
@@ -91,16 +94,16 @@ class PaystackClient(object):
         }
         request = method_map.get(method)
         payload = json.dumps(data) if data else data
-        url = self._url(path)
+        url = self.get_url(path)
 
         if not request:
             raise InvalidRequestMethod("Request method not recognised or implemented.")
 
         logger.info("Sending paystack %s request on URL: %s.", method, url)
-        response = request(url=url, headers=self._headers(), data=payload)
-        return self._parse_response(response)
+        response = request(url=url, headers=self.get_headers(), data=payload)
+        return self.parse_response(response)
 
-    def _initialize_transaction(self, data):
+    def initialize_transaction(self, data):
         """
         Returns request data required for Paystack initialize transaction API request.
         Visit https://developers.paystack.co/reference#paystack-standard-xd for API reference.
@@ -111,7 +114,7 @@ class PaystackClient(object):
             'data': data
         }
 
-    def _verify_transaction(self, reference):
+    def verify_transaction(self, reference):
         """
         Returns request data required for Paystack verify transaction API request.
         Visit https://developers.paystack.co/reference#verify-transaction for API reference.
@@ -121,7 +124,7 @@ class PaystackClient(object):
             'path': '/transaction/verify/{}'.format(reference),
         }
 
-    def _create_refund(self, transaction_id):
+    def create_refund(self, transaction_id):
         """
         Returns request data required for Paystack create refund API request.
         Visit https://developers.paystack.co/reference#create-refund for API reference.
@@ -134,7 +137,7 @@ class PaystackClient(object):
             'path': '/refund'
         }
 
-    def _fetch_refund(self, refund_id):
+    def fetch_refund(self, refund_id):
         """
         Returns request data required for Paystack fetch refund API request.
         Visit https://developers.paystack.co/reference#fetch-refund for API reference.
@@ -149,10 +152,10 @@ class PaystackClient(object):
         Calls relevant client method to send Paystack requests.
         """
         method_map = {
-            paystack_const.VERIFY_TRANSACTION_CODE: self._verify_transaction,
-            paystack_const.INITIALIZE_TRANSACTION_CODE: self._initialize_transaction,
-            paystack_const.CREATE_REFUND_CODE: self._create_refund,
-            paystack_const.FETCH_REFUND_CODE: self._fetch_refund
+            paystack_const.VERIFY_TRANSACTION_CODE: self.verify_transaction,
+            paystack_const.INITIALIZE_TRANSACTION_CODE: self.initialize_transaction,
+            paystack_const.CREATE_REFUND_CODE: self.create_refund,
+            paystack_const.FETCH_REFUND_CODE: self.fetch_refund
         }
         transaction_handler = method_map.get(code)
 
@@ -160,4 +163,4 @@ class PaystackClient(object):
             raise InvalidPaystackClientMethod("Invalid Code: Unable to map it with paystack client method.")
 
         transaction_object = transaction_handler(data)
-        return self._handle_request(transaction_object)
+        return self.handle_request(transaction_object)
