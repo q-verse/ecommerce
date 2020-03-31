@@ -163,6 +163,9 @@
                             {% elif processor.NAME == 'authorizenet' %}
                                 {# Translators: Do NOT translate the name Authorizenet. #}
                                 {% trans "Checkout with AuthorizeNet" %}
+                            {% elif processor.NAME == 'paystack' %}
+                                {# Translators: Do NOT translate the name Paystack. #}
+                                {% trans "Checkout with Paystack" %}
                             {% endif %}
                         </button>
                     {% endfor %}

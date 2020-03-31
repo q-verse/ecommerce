@@ -105,6 +105,7 @@ PAYMENT_PROCESSORS = (
     'ecommerce.extensions.payment.processors.paypal.Paypal',
     'ecommerce.extensions.payment.processors.stripe.Stripe',
     'ecommerce.extensions.payment.processors.authorizenet.AuthorizeNet',
+    'ecommerce.extensions.payment.processors.paystack.Paystack',
 )
 
 PAYMENT_PROCESSOR_RECEIPT_PATH = '/checkout/receipt/'
@@ -144,6 +145,11 @@ PAYMENT_PROCESSOR_CONFIG = {
             'merchant_auth_name': None,
             'transaction_key': None,
             'redirect_url': None
+        },
+        'paystack': {
+            'cancel_checkout_path': PAYMENT_PROCESSOR_CANCEL_PATH,
+            'public_key': None,
+            'private_key': None,
         }
     },
 }

@@ -16,6 +16,7 @@ from ecommerce.extensions.analytics.utils import audit_log
 from ecommerce.extensions.checkout.utils import format_currency, get_receipt_page_url
 from ecommerce.extensions.fulfillment.api import revoke_fulfillment_for_refund
 from ecommerce.extensions.order.constants import PaymentEventTypeName
+from ecommerce.extensions.payment.exceptions import RefundError
 from ecommerce.extensions.payment.helpers import get_processor_class_by_name
 from ecommerce.extensions.refund.exceptions import InvalidStatus
 from ecommerce.extensions.refund.status import REFUND, REFUND_LINE
@@ -247,7 +248,7 @@ class Refund(StatusMixin, TimeStampedModel):
                 self.set_status(REFUND.PAYMENT_REFUNDED)
                 if notify_purchaser:
                     self._notify_purchaser()
-            except PaymentError:
+            except (PaymentError, RefundError):
                 logger.exception('Failed to issue credit for refund [%d].', self.id)
                 self.set_status(REFUND.PAYMENT_REFUND_ERROR)
                 return False
