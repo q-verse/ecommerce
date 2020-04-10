@@ -147,7 +147,7 @@ class Paystack(BaseClientSidePaymentProcessor):
         logger.info("Successfully executed Paystack payment [%s] for basket: %d.", transaction_id, basket.id)
 
         currency = response.get('currency')
-        total = float(response.get('amount'))
+        total = basket.total_incl_tax
 
         return HandledProcessorResponse(
             transaction_id=transaction_id,
