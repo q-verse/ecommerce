@@ -54,6 +54,8 @@
 
 <script type="text/javascript">
     var initModelData = {{ analytics_data|safe }};
+    var currency = "{{ settings.OSCAR_DEFAULT_CURRENCY }}";
+    var currency_sybmol = "{{ settings.OSCAR_DEFAULT_CURRENCY_SYMBOL }}";
 </script>
 
 {% compress js %}

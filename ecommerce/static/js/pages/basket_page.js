@@ -265,36 +265,39 @@ define([
                     countryData = Cookies.getJSON('edx-price-l10n'),
                     disclaimerPrefix;
 
+                // replace currency with currency symbol
                 // when the price value has a USD prefix, replace it with a $
-                price = price.replace('USD', '$');
+                price = price.replace(currency, currency_sybmol);
                 disclaimerPrefix = '* This total contains an approximate conversion. You will be charged ';
 
                 if (BasketPage.isValidLocalCurrencyCookie(countryData) && countryData.countryCode !== 'USA') {
                     $('<span>').attr('class', 'price-disclaimer')
-                        .text(gettext(disclaimerPrefix) + price + ' USD.')
+                        .text(gettext(disclaimerPrefix) + price + ' '+ currency +'.')
                         .appendTo('div[aria-labelledby="order-details-region"]');
                 }
             },
 
-            formatToLocalPrice: function(prefix, priceInUsd) {
+            formatToLocalPrice: function(prefix, priceInDefaultCurrency) {
                 var countryData = Cookies.getJSON('edx-price-l10n'),
-                    parsedPriceInUsd;
+                    parsedPriceInDefaultCurrency;
 
-                // Default to USD when the exchange rate cookie doesn't exist
+                // Use default currency when the exchange rate cookie doesn't exist
                 if (BasketPage.isValidLocalCurrencyCookie(countryData) && countryData.countryCode !== 'USA') {
                     // assumes all formatted prices have a comma every three places
-                    parsedPriceInUsd = parseFloat(priceInUsd.replace(',', ''));
-                    return countryData.symbol + Math.round(parsedPriceInUsd * countryData.rate).toLocaleString() + ' '
+                    parsedPriceInDefaultCurrency = parseFloat(priceInDefaultCurrency.replace(',', ''));
+                    return countryData.symbol + Math.round(parsedPriceInDefaultCurrency * countryData.rate).toLocaleString() + ' '
                         + countryData.code + ' *';
                 } else {
-                    return prefix + priceInUsd;
+                    return prefix + priceInDefaultCurrency;
                 }
             },
 
-            generateLocalPriceText: function(usdPriceText) {
-                // Assumes price value is prefixed by $ or USD with optional sign followed by optional string
-                var localPriceText = usdPriceText,
-                    prefixMatch = localPriceText.match(/(\$|USD)?(([1-9][0-9]{0,2}(,[0-9]{3})*)|[0-9]+)?\.[0-9]{1,2}/),
+            generateLocalPriceText: function(defaultCurrencyPriceText) {
+                // Assumes price value is prefixed by currency symbol i.e. $
+                // or by currency i.e USD with optional sign followed by optional string
+                var re = new RegExp('(\\' + currency_sybmol + '|' + currency + ')?(([1-9][0-9]{0,2}(,[0-9]{3})*)|[0-9]+)?\\.[0-9]{1,2}')
+                var localPriceText = defaultCurrencyPriceText,
+                    prefixMatch = localPriceText.match(re),
                     entireMatch,
                     groupMatch,
                     startIndex,
