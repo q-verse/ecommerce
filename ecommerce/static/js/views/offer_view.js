@@ -95,7 +95,7 @@ define([
                 if (benefit.type === 'Percentage') {
                     benefitValue += '%';
                 } else {
-                    benefitValue = '$' + benefitValue;
+                    benefitValue = currency_sybmol + benefitValue;
                 }
 
                 course.set({benefit_value: benefitValue});
