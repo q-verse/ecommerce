@@ -407,7 +407,7 @@ define([
                 if (val === 'Percentage') {
                     icon = '%';
                 } else if (val === 'Absolute') {
-                    icon = currency_sybmol;
+                    icon = currency_symbol;
                 }
                 return icon;
             },

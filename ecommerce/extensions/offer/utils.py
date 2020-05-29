@@ -1,4 +1,6 @@
+
 """Offer Utility Methods. """
+from __future__ import unicode_literals
 import logging
 
 from decimal import Decimal
@@ -69,7 +71,12 @@ def format_benefit_value(benefit):
         benefit_value = _('{benefit_value}%'.format(benefit_value=benefit_value))
     else:
         converted_benefit = add_currency(Decimal(benefit.value))
-        benefit_value = _('${benefit_value}'.format(benefit_value=converted_benefit))
+        currency_symbol = settings.OSCAR_DEFAULT_CURRENCY_SYMBOL
+
+        benefit_value = _('{currency_symbol}{benefit_value}'.format(
+            currency_symbol=currency_symbol,
+            benefit_value=converted_benefit
+        ))
     return benefit_value
 
 

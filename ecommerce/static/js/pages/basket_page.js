@@ -267,7 +267,7 @@ define([
 
                 // replace currency with currency symbol
                 // when the price value has a USD prefix, replace it with a $
-                price = price.replace(currency, currency_sybmol);
+                price = price.replace(currency, currency_symbol);
                 disclaimerPrefix = '* This total contains an approximate conversion. You will be charged ';
 
                 if (BasketPage.isValidLocalCurrencyCookie(countryData) && countryData.countryCode !== 'USA') {
@@ -295,7 +295,7 @@ define([
             generateLocalPriceText: function(defaultCurrencyPriceText) {
                 // Assumes price value is prefixed by currency symbol i.e. $
                 // or by currency i.e USD with optional sign followed by optional string
-                var re = new RegExp('(\\' + currency_sybmol + '|' + currency + ')?(([1-9][0-9]{0,2}(,[0-9]{3})*)|[0-9]+)?\\.[0-9]{1,2}')
+                var re = new RegExp('(\\' + currency_symbol + '|' + currency + ')?(([1-9][0-9]{0,2}(,[0-9]{3})*)|[0-9]+)?\\.[0-9]{1,2}')
                 var localPriceText = defaultCurrencyPriceText,
                     prefixMatch = localPriceText.match(re),
                     entireMatch,
