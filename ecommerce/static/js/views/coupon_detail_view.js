@@ -44,7 +44,7 @@ define([
             },
 
             discountValue: function() {
-                var stringFormat = (this.model.get('benefit_type') === 'Percentage') ? '%u%%' : '$%u';
+                var stringFormat = (this.model.get('benefit_type') === 'Percentage') ? '%u%%' : (currency_symbol + '%u');
                 return _s.sprintf(stringFormat, this.model.get('benefit_value'));
             },
 

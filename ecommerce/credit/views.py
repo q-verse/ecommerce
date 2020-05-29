@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import logging
 
 from dateutil.parser import parse
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -87,6 +88,7 @@ class Checkout(TemplateView):
             'course': course,
             'deadline': deadline,
             'providers': providers,
+            'currency_symbol': settings.OSCAR_DEFAULT_CURRENCY_SYMBOL
         })
 
         return context
