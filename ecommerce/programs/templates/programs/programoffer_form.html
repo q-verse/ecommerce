@@ -51,7 +51,7 @@
       {% csrf_token %}
       {{ form|crispy }}
 
-      <div class="form-actions">
+      <div class="form-actions form-group">
         <input type="submit" class="btn btn-primary" value="{% if editing %}
             {% trans "Save Changes" %}
           {% else %}

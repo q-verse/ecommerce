@@ -124,14 +124,15 @@ class PaystackClient(object):
             'path': '/transaction/verify/{}'.format(reference),
         }
 
-    def create_refund(self, transaction_id):
+    def create_refund(self, api_data):
         """
         Returns request data required for Paystack create refund API request.
         Visit https://developers.paystack.co/reference#create-refund for API reference.
         """
         return {
             'data': {
-                'transaction': transaction_id
+                'transaction': api_data.get('reference_number'),
+                'amount': api_data.get('amount')
             },
             'method': self._POST_METHOD,
             'path': '/refund'

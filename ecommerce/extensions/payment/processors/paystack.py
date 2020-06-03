@@ -55,37 +55,47 @@ class Paystack(BaseClientSidePaymentProcessor):
         ecommerce_base_url = get_ecommerce_url()
         return "{}{}".format(ecommerce_base_url, redirect_url)
 
-    def get_basket_amount(self, basket):
+    def get_basket_amount(self, amount):
         """
         Multiplies the price of course with 100 to get the right amount for a transaction.
         """
         # According to Paystack documentation "The amount passed is in Kobo (A positive integer in the
         # smallest currency unit), so you'd have to multiply the Naira amount by 100 to get the Kobo value.
         # Eg NGN 100 should be passed as 10000."
-        return str((basket.total_incl_tax * 100).to_integral_value())
+        return str((amount * 100).to_integral_value())
 
     def get_paystack_custom_fields_data(self, basket):
         """
         Returns Paystack Custom fields.
         """
-        product = basket.all_lines()[0].product
-        return [
+        custom_fields = [
             {
                 'display_name': 'Order Number',
                 'variable_name': 'order_number',
                 'value': basket.order_number
             },
             {
-                'display_name': 'Course Id',
-                'variable_name': 'course_id',
-                'value': product.course_id
-            },
-            {
-                'display_name': 'Course Name',
-                'variable_name': 'course_title',
-                'value': product.course.name
+                'display_name': 'Total Purchased Courses',
+                'variable_name': 'total_courses',
+                'value': basket.all_lines().count()
             }
         ]
+        for index, line in enumerate(basket.all_lines()):
+            custom_fields.extend([
+                {
+                    'display_name': 'Course Id',
+                    'variable_name': 'course_{}_id'.format(index),
+                    'value': line.product.course_id
+                },
+                {
+                    'display_name': 'Course Name',
+                    'variable_name': 'course_{}_name'.format(index),
+                    'value': line.product.course.name
+                }
+            ]
+        )
+
+        return custom_fields
 
     def get_transaction_parameters(self, basket, request=None, use_client_side_checkout=True, **kwargs):
         """
@@ -106,7 +116,7 @@ class Paystack(BaseClientSidePaymentProcessor):
             a payment from being created.
         """
         data = {
-            'amount': self.get_basket_amount(basket),
+            'amount': self.get_basket_amount(basket.total_incl_tax),
             'email': basket.owner.email,
             'callback_url': self.return_url,
             'metadata': {
@@ -181,7 +191,11 @@ class Paystack(BaseClientSidePaymentProcessor):
             RefundError: indicating general refund error.
         """
         try:
-            success, response = self.paystack_client.handler(CREATE_REFUND_CODE, reference_number)
+            api_data = {
+                'reference_number': reference_number,
+                'amount': self.get_basket_amount(amount)
+            }
+            success, response = self.paystack_client.handler(CREATE_REFUND_CODE, api_data)
 
             if success:
                 data = response.get('data')

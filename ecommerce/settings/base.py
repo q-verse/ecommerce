@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Common settings and globals."""
 import datetime
 import os
@@ -196,7 +197,7 @@ TEMPLATES = [
                 'oscar.core.context_processors.metadata',
                 'ecommerce.core.context_processors.core',
                 'ecommerce.extensions.analytics.context_processors.analytics',
-                
+
                 # edly context processor to apply dynamic theming
                 'ecommerce.extensions.edly_ecommerce_app.context_processor.dynamic_theming_context'
             ),
@@ -658,3 +659,7 @@ SAILTHRU_SECRET = None
 
 # Edly marketing site configuration
 EDLY_WORDPRESS_URL = 'http://localhost:8888'
+
+# Default Currency
+OSCAR_DEFAULT_CURRENCY = 'NGN'
+OSCAR_DEFAULT_CURRENCY_SYMBOL = '₦'
